@@ -33,8 +33,10 @@ import android.view.ContextThemeWrapper;
 public class GraphViewStyle {
 	private int verticalLabelsColor;
 	private int horizontalLabelsColor;
-	private int gridColor;
+    private int verticalGridColor;
+	private int horizontalGridColor;
 	private GridStyle gridStyle = GridStyle.BOTH;
+    private GridPosition gridPosition = GridPosition.BACKGROUND;
 	private float textSize;
 	private int verticalLabelsWidth;
 	private int numVerticalLabels;
@@ -53,16 +55,25 @@ public class GraphViewStyle {
 		setDefaults();
 		this.verticalLabelsColor = vLabelsColor;
 		this.horizontalLabelsColor = hLabelsColor;
-		this.gridColor = gridColor;
+		this.horizontalGridColor = gridColor;
+        this.verticalGridColor = gridColor;
 	}
 
-	public int getGridColor() {
-		return gridColor;
+	public int getVerticalGridColor() {
+		return verticalGridColor;
 	}
+
+    public int getHorizontalGridColor() {
+        return horizontalGridColor;
+    }
 	
 	public GridStyle getGridStyle() {
 		return gridStyle;
 	}
+
+    public GridPosition getGridPosition() {
+        return gridPosition;
+    }
 
 	public int getHorizontalLabelsColor() {
 		return horizontalLabelsColor;
@@ -111,7 +122,8 @@ public class GraphViewStyle {
 	private void setDefaults() {
 		verticalLabelsColor = Color.WHITE;
 		horizontalLabelsColor = Color.WHITE;
-		gridColor = Color.DKGRAY;
+		horizontalGridColor = Color.DKGRAY;
+        verticalGridColor = Color.DKGRAY;
 		textSize = 30f;
 		legendWidth = 120;
 		legendBorder = 10;
@@ -123,10 +135,18 @@ public class GraphViewStyle {
 	public void setGridStyle(GridStyle style) {
 		gridStyle = style;
 	}
+
+    public void setGridPosition(GridPosition position) {
+        gridPosition = position;
+    }
 	
-	public void setGridColor(int c) {
-		gridColor = c;
+	public void setVerticalGridColor(int c) {
+		verticalGridColor = c;
 	}
+
+    public void setHorizontalGridColor(int c) {
+        horizontalGridColor = c;
+    }
 
 	public void setHorizontalLabelsColor(int c) {
 		horizontalLabelsColor = c;
@@ -205,4 +225,14 @@ public class GraphViewStyle {
         public boolean drawVertical() { return this == BOTH || this == VERTICAL && this != NONE; }
         public boolean drawHorizontal() { return this == BOTH || this == HORIZONTAL && this != NONE; }
 	}
+
+    /**
+     * Define if drawing grid in the foreground or background
+     */
+    public enum GridPosition {
+        FOREGROUND, BACKGROUND;
+
+        public boolean drawInFront() { return this == FOREGROUND; }
+        public boolean drawInRear()  { return this == BACKGROUND; }
+    }
 }

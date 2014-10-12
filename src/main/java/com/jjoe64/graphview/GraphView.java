@@ -19,6 +19,7 @@
 
 package com.jjoe64.graphview;
 
+import java.lang.Integer;
 import java.nio.charset.Charset;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -122,17 +123,21 @@ abstract public class GraphView extends LinearLayout {
 			}
 
 			// horizontal lines
-			if (graphViewStyle.getGridStyle().drawHorizontal()) {
+			if (graphViewStyle.getGridStyle().drawHorizontal() && graphViewStyle.getGridPosition().drawInRear()) {
 				paint.setTextAlign(Align.LEFT);
 				int vers = verlabels.length - 1;
 				for (int i = 0; i < verlabels.length; i++) {
-					paint.setColor(graphViewStyle.getGridColor());
-					float y = ((graphheight / vers) * i) + border;
-					canvas.drawLine(horstart, y, width, y, paint);
+                    if (horizontalLinesToHide.indexOf(i) < 0) {
+                        paint.setColor(graphViewStyle.getHorizontalGridColor());
+                        float y = ((graphheight / vers) * i) + border;
+                        canvas.drawLine(horstart, y, width, y, paint);
+                    }
 				}
 			}
 
-			drawHorizontalLabels(canvas, border, horstart, height, horlabels, graphwidth);
+            if (graphViewStyle.getGridPosition().drawInRear()) {
+                drawHorizontalLabels(canvas, border, horstart, height, horlabels, graphwidth);
+            }
 
             paint.setColor(graphViewStyle.getHorizontalLabelsColor());
 			paint.setTextAlign(Align.CENTER);
@@ -156,6 +161,22 @@ abstract public class GraphView extends LinearLayout {
 			for (int i=0; i<graphSeries.size(); i++) {
 				drawSeries(canvas, _values(i), graphwidth, graphheight, border, minX, minY, diffX, diffY, horstart, graphSeries.get(i).style);
 			}
+
+            if (graphViewStyle.getGridPosition().drawInFront()) {
+                drawHorizontalLabels(canvas, border, horstart, height, horlabels, graphwidth);
+            }
+
+            if (graphViewStyle.getGridStyle().drawHorizontal() && graphViewStyle.getGridPosition().drawInFront()) {
+                paint.setTextAlign(Align.LEFT);
+                int vers = verlabels.length - 1;
+                for (int i = 0; i < verlabels.length; i++) {
+                    if (horizontalLinesToHide.indexOf(i) < 0) {
+                        paint.setColor(graphViewStyle.getHorizontalGridColor());
+                        float y = ((graphheight / vers) * i) + border;
+                        canvas.drawLine(horstart, y, width, y, paint);
+                    }
+                }
+            }
 
 			if (showLegend) drawLegend(canvas, height, width);
 		}
@@ -313,7 +334,7 @@ abstract public class GraphView extends LinearLayout {
 			}
 			int vers = verlabels.length - 1;
 			for (int i = 0; i < verlabels.length; i++) {
-				float y = ((graphheight / vers) * i) + border;
+				float y = ((graphheight / vers) * i) + border + 0.3f * graphViewStyle.getTextSize();
 				paint.setColor(graphViewStyle.getVerticalLabelsColor());
 
                 String[] lines = verlabels[i].split("\n");
@@ -331,6 +352,7 @@ abstract public class GraphView extends LinearLayout {
 
 	protected final Paint paint;
 	private String[] horlabels;
+    private String[] secondaryHorizontalLabels;
 	private String[] verlabels;
 	private String title;
 	private boolean scrollable;
@@ -346,7 +368,7 @@ abstract public class GraphView extends LinearLayout {
 	private LegendAlign legendAlign = LegendAlign.MIDDLE;
 	private boolean manualYAxis;
 	private boolean manualMaxY;
-    	private boolean manualMinY;
+    private boolean manualMinY;
 	private double manualMaxYValue;
 	private double manualMinYValue;
 	protected GraphViewStyle graphViewStyle;
@@ -360,6 +382,7 @@ abstract public class GraphView extends LinearLayout {
 	private boolean staticVerticalLabels;
     private boolean showHorizontalLabels = true;
     private boolean showVerticalLabels = true;
+    private ArrayList<Integer> horizontalLinesToHide = new ArrayList<Integer>(0);
 
 	public GraphView(Context context, AttributeSet attrs) {
 		this(context, attrs.getAttributeValue(null, "title"));
@@ -438,10 +461,10 @@ abstract public class GraphView extends LinearLayout {
 		// horizontal labels + lines
 		int hors = horlabels.length - 1;
 		for (int i = 0; i < horlabels.length; i++) {
-			paint.setColor(graphViewStyle.getGridColor());
+			paint.setColor(graphViewStyle.getVerticalGridColor());
 			float x = ((graphwidth / hors) * i) + horstart;
 			if(graphViewStyle.getGridStyle().drawVertical()) { // vertical lines
-				canvas.drawLine(x, height - border, x, border, paint);
+				canvas.drawLine(x, height - border - (secondaryHorizontalLabels[i] == null ? 0 : graphViewStyle.getTextSize() * 1.1f + 12.0f), x, border, paint);
 			}
             if(showHorizontalLabels) {
                 paint.setTextAlign(Align.CENTER);
@@ -455,6 +478,11 @@ abstract public class GraphView extends LinearLayout {
                     // for the last line y = height
                     float y = (height-4) - (lines.length-li-1)*graphViewStyle.getTextSize()*1.1f;
                     canvas.drawText(lines[li], x, y, paint);
+                }
+
+                if (secondaryHorizontalLabels != null && secondaryHorizontalLabels[i] != null) {
+                    float y = height - graphViewStyle.getTextSize() * 1.1f - 20.0f;
+                    canvas.drawText(secondaryHorizontalLabels[i], x, y, paint);
                 }
             }
 		}
@@ -849,6 +877,10 @@ abstract public class GraphView extends LinearLayout {
 		this.horlabels = horlabels;
 	}
 
+    public void setSecondaryHorizontalLabels(String[] secondaryHorizontalLabels) {
+        this.secondaryHorizontalLabels = secondaryHorizontalLabels;
+    }
+
 	/**
 	 * legend position
 	 * @param legendAlign
@@ -992,6 +1024,10 @@ abstract public class GraphView extends LinearLayout {
 		this.verlabels = verlabels;
 	}
 
+    public void setHorizontalLinesToHide(ArrayList<Integer> linesToHide) {
+        this.horizontalLinesToHide = linesToHide;
+    }
+
 	/**
 	 * set's the viewport for the graph.
 	 * @see #setManualYAxisBounds(double, double) to limit the y-viewport
@@ -1047,5 +1083,4 @@ abstract public class GraphView extends LinearLayout {
     public boolean getShowVerticalLabels() {
         return showVerticalLabels;
     }
-
 }
